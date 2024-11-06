@@ -1,56 +1,62 @@
-import cv2
-import datetime
+import tkinter as tk
+from PIL import Image, ImageTk
+import os
+import subprocess
+from camara import Camara  # Importamos la clase Camara para manejar la cámara
 
-# Inicializar la captura de video
-cap = cv2.VideoCapture(0)
-ret, frame1 = cap.read()
-ret, frame2 = cap.read()
+# Función que se ejecuta al presionar el botón de iniciar videovigilancia
+def iniciar_videovigilancia():
+    print("Videovigilancia iniciada")
+    # Crear una instancia de la clase Camara y llamar a su método para iniciar la cámara
+    camara = Camara()  # Instanciar la cámara
+    camara.iniciar_camara()  # Iniciar la cámara
 
-# Configurar el codec y el archivo de salida
-fourcc = cv2.VideoWriter_fourcc(*'XVID')
-out = None
-recording = False
+# Función para abrir la carpeta de grabaciones
+def mostrar_grabaciones():
+    carpeta_grabaciones = os.path.join(os.getcwd(), "grabaciones")  # Ruta de la carpeta
+    if not os.path.exists(carpeta_grabaciones):
+        os.makedirs(carpeta_grabaciones)  # Crear la carpeta si no existe
+    # Abrir la carpeta en el explorador de archivos
+    if os.name == 'nt':  # Windows
+        os.startfile(carpeta_grabaciones)
+    elif os.name == 'posix':  # macOS o Linux
+        subprocess.call(["open" if os.uname().sysname == "Darwin" else "xdg-open", carpeta_grabaciones])
 
-while cap.isOpened():
-    # Calcular la diferencia entre frames consecutivos
-    diff = cv2.absdiff(frame1, frame2)
-    gray = cv2.cvtColor(diff, cv2.COLOR_BGR2GRAY)
-    gray = cv2.GaussianBlur(gray, (5, 5), 0)
-    _, thresh = cv2.threshold(gray, 25, 255, cv2.THRESH_BINARY)
-    dilated = cv2.dilate(thresh, None, iterations=3)
-    contours, _ = cv2.findContours(dilated, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+# Crear la ventana principal
+ventana = tk.Tk()
+ventana.title("InstaWatch")
+ventana.geometry("400x300")  # Tamaño de la ventana
 
-    # Verificar si se detecta movimiento
-    for contour in contours:
-        if cv2.contourArea(contour) < 5000:  # Ajusta el umbral según tus necesidades
-            continue
-        if not recording:
-            # Iniciar la grabación
-            recording = True
-            filename = f"recording_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.avi"
-            out = cv2.VideoWriter(filename, fourcc, 20.0, (frame1.shape[1], frame1.shape[0]))
-        
-        # Dibujar un rectángulo alrededor del movimiento detectado
-        (x, y, w, h) = cv2.boundingRect(contour)
-        cv2.rectangle(frame1, (x, y), (x + w, y + h), (0, 255, 0), 2)
+# Cargar y redimensionar la imagen de fondo
+imagen_fondo = Image.open("recursos/rec.png")  # Cambia "fondo.png" por la ruta de tu imagen de fondo
+imagen_fondo_resized = imagen_fondo.resize((400, 300))  # Ajustar el tamaño de la imagen al tamaño de la ventana
+imagen_fondo_tk = ImageTk.PhotoImage(imagen_fondo_resized)  # Convertir para tkinter
 
-    if recording:
-        out.write(frame1)
-        if len(contours) == 0:
-            # Si no hay movimiento, detener la grabación
-            recording = False
-            out.release()
+# Colocar la imagen de fondo en un Label que ocupe toda la ventana
+label_fondo = tk.Label(ventana, image=imagen_fondo_tk)
+label_fondo.place(x=0, y=0, relwidth=1, relheight=1)  # Hacer que el fondo cubra toda la ventana
 
-    # Mostrar el frame procesado
-    cv2.imshow('Motion Detection', frame1)
-    frame1 = frame2
-    ret, frame2 = cap.read()
+# Cargar y redimensionar la imagen del ícono
+imagen_icono = Image.open("recursos/camara_seguridad.png")  # Cambia "camara_seguridad.png" por la ruta de tu imagen
+imagen_icono_resized = imagen_icono.resize((60, 60))  # Redimensiona la imagen del ícono
+imagen_logo = ImageTk.PhotoImage(imagen_icono_resized)
 
-    # Salir al presionar 'q'
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+# Colocar el ícono encima del botón
+label_imagen = tk.Label(ventana, image=imagen_logo)  # Agregar fondo blanco o transparente si se necesita
+label_imagen.pack(pady=30)
 
-cap.release()
-if out is not None and out.isOpened():
-    out.release()
-cv2.destroyAllWindows()
+# Crear el botón "Iniciar videovigilancia"
+boton_iniciar = tk.Button(ventana, text="Iniciar Videovigilancia", font=("Arial", 14), command=iniciar_videovigilancia)
+boton_iniciar.pack(pady=20)
+
+# Crear el botón para visualizar las grabaciones realizadas
+boton_grabaciones = tk.Button(ventana, text="Ver grabaciones", font=("Arial", 14), command=mostrar_grabaciones)
+boton_grabaciones.pack(pady=10)
+
+# Traer los elementos al frente para que se vean sobre el fondo
+label_imagen.lift()
+boton_iniciar.lift()
+boton_grabaciones.lift()
+
+# Ejecutar la aplicación
+ventana.mainloop()
