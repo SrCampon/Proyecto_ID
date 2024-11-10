@@ -1,5 +1,8 @@
 # Sistema de Videovigilancia en Python
 
+![GUI vídeovigilancia](recursos/portada.png)
+
+
 ## Descripción
 Sistema de videovigilancia en Python con interfaz gráfica, que detecta movimiento y responde con una alarma sonora o captura de imágenes.
 
