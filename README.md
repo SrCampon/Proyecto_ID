@@ -1,6 +1,6 @@
 # Sistema de Videovigilancia en Python
 
-![GUI vídeovigilancia](recursos/portada.png)
+![GUI vídeovigilancia](recursos/Portada.png)
 
 
 ## Descripción
